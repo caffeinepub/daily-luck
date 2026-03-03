@@ -1,0 +1,192 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Fraunces – display / headings */
+@font-face {
+  font-family: "Fraunces";
+  src: url("/assets/fonts/Fraunces.woff2") format("woff2");
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* General Sans – body */
+@font-face {
+  font-family: "General Sans";
+  src: url("/assets/fonts/GeneralSans.woff2") format("woff2");
+  font-weight: 200 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+@layer base {
+  :root {
+    --radius: 1rem;
+
+    /* ── Cosmic dark palette ── */
+    --background: 0.1 0.04 285;
+    --foreground: 0.95 0.02 285;
+
+    --card: 0.14 0.055 285;
+    --card-foreground: 0.95 0.02 285;
+
+    --popover: 0.16 0.055 285;
+    --popover-foreground: 0.95 0.02 285;
+
+    /* Gold primary */
+    --primary: 0.82 0.14 80;
+    --primary-foreground: 0.12 0.04 285;
+
+    /* Deep indigo secondary */
+    --secondary: 0.22 0.09 285;
+    --secondary-foreground: 0.95 0.02 285;
+
+    --muted: 0.2 0.065 285;
+    --muted-foreground: 0.65 0.04 285;
+
+    /* Violet accent */
+    --accent: 0.58 0.2 295;
+    --accent-foreground: 0.98 0.01 285;
+
+    --destructive: 0.577 0.245 27.325;
+    --destructive-foreground: 0.985 0 0;
+
+    --border: 0.3 0.07 285;
+    --input: 0.25 0.07 285;
+    --ring: 0.82 0.14 80;
+
+    /* Chart */
+    --chart-1: 0.82 0.14 80;
+    --chart-2: 0.58 0.2 295;
+    --chart-3: 0.65 0.18 310;
+    --chart-4: 0.72 0.16 185;
+    --chart-5: 0.55 0.22 260;
+
+    --sidebar: 0.12 0.045 285;
+    --sidebar-foreground: 0.95 0.02 285;
+    --sidebar-primary: 0.82 0.14 80;
+    --sidebar-primary-foreground: 0.12 0.04 285;
+    --sidebar-accent: 0.22 0.09 285;
+    --sidebar-accent-foreground: 0.95 0.02 285;
+    --sidebar-border: 0.3 0.07 285;
+    --sidebar-ring: 0.82 0.14 80;
+
+    /* Custom cosmic tokens */
+    --gold: 0.82 0.14 80;
+    --gold-dim: 0.65 0.12 78;
+    --violet: 0.58 0.2 295;
+    --midnight: 0.1 0.04 285;
+    --starlight: 0.97 0.01 285;
+  }
+
+  html {
+    color-scheme: dark;
+  }
+
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+    font-family: "General Sans", system-ui, sans-serif;
+  }
+}
+
+/* Cosmic shimmer / glow utilities */
+@layer utilities {
+  .glow-gold {
+    box-shadow:
+      0 0 20px oklch(0.82 0.14 80 / 0.35),
+      0 0 40px oklch(0.82 0.14 80 / 0.15);
+  }
+  .glow-violet {
+    box-shadow:
+      0 0 20px oklch(0.58 0.2 295 / 0.4),
+      0 0 60px oklch(0.58 0.2 295 / 0.15);
+  }
+  .text-gold {
+    color: oklch(var(--gold));
+  }
+  .text-gold-dim {
+    color: oklch(var(--gold-dim));
+  }
+  .border-gold {
+    border-color: oklch(var(--gold) / 0.4);
+  }
+  .bg-gold {
+    background-color: oklch(var(--gold));
+  }
+  .card-glass {
+    background: oklch(0.14 0.055 285 / 0.7);
+    backdrop-filter: blur(16px);
+    border: 1px solid oklch(0.4 0.09 285 / 0.4);
+  }
+  .card-glass-hover {
+    transition:
+      box-shadow 0.3s ease,
+      transform 0.3s ease,
+      border-color 0.3s ease;
+  }
+  .card-glass-hover:hover {
+    box-shadow:
+      0 0 24px oklch(0.82 0.14 80 / 0.2),
+      0 8px 32px oklch(0.1 0.04 285 / 0.6);
+    transform: translateY(-2px);
+    border-color: oklch(0.82 0.14 80 / 0.45);
+  }
+  .noise-overlay {
+    position: relative;
+  }
+  .noise-overlay::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+    pointer-events: none;
+    z-index: 0;
+    border-radius: inherit;
+  }
+}
+
+/* Twinkle keyframes */
+@keyframes twinkle {
+  0%, 100% { opacity: 0.3; transform: scale(0.8); }
+  50% { opacity: 1; transform: scale(1.2); }
+}
+
+@keyframes float-slow {
+  0%, 100% { transform: translateY(0px) rotate(0deg); }
+  50% { transform: translateY(-12px) rotate(3deg); }
+}
+
+@keyframes pulse-glow {
+  0%, 100% { box-shadow: 0 0 12px oklch(0.82 0.14 80 / 0.3); }
+  50% { box-shadow: 0 0 28px oklch(0.82 0.14 80 / 0.65), 0 0 60px oklch(0.82 0.14 80 / 0.2); }
+}
+
+@keyframes orbit {
+  from { transform: rotate(0deg) translateX(6px) rotate(0deg); }
+  to { transform: rotate(360deg) translateX(6px) rotate(-360deg); }
+}
+
+@keyframes shimmer {
+  0% { background-position: -200% center; }
+  100% { background-position: 200% center; }
+}
+
+.animate-twinkle { animation: twinkle 2s ease-in-out infinite; }
+.animate-float-slow { animation: float-slow 6s ease-in-out infinite; }
+.animate-pulse-glow { animation: pulse-glow 2.5s ease-in-out infinite; }
+.animate-orbit { animation: orbit 8s linear infinite; }
+.animate-shimmer {
+  background: linear-gradient(
+    90deg,
+    oklch(0.82 0.14 80 / 0) 0%,
+    oklch(0.82 0.14 80 / 0.6) 50%,
+    oklch(0.82 0.14 80 / 0) 100%
+  );
+  background-size: 200% auto;
+  animation: shimmer 2.5s linear infinite;
+}
