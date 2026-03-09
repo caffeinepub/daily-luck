@@ -1,51 +1,73 @@
-import { Button } from "@/components/ui/button";
-import { useQuery } from "@tanstack/react-query";
-import {
-  Briefcase,
-  Clock,
-  Coins,
-  Hash,
-  Heart,
-  Leaf,
-  Moon,
-  Palette,
-  RefreshCw,
-  Sparkles,
-  Star,
-} from "lucide-react";
+import { Briefcase, Coins, Heart, Leaf, Sparkles } from "lucide-react";
 import { AnimatePresence, type Variants, motion } from "motion/react";
-import type { LuckReading } from "./backend.d.ts";
-import { useActor } from "./hooks/useActor";
+import { useState } from "react";
 
-/* ─── React Query hook ───────────────────────────────────────── */
-function useTodaysLuck() {
-  const { actor, isFetching } = useActor();
-  return useQuery<LuckReading>({
-    queryKey: ["todaysLuck"],
-    queryFn: async () => {
-      if (!actor) throw new Error("Actor not ready");
-      return actor.getTodaysLuck();
-    },
-    enabled: !!actor && !isFetching,
-    staleTime: 1000 * 60 * 5,
-  });
+/* ─── Local luck generator (no backend needed) ───────────────── */
+function generateDailyLuck() {
+  const today = new Date();
+  const seed =
+    today.getFullYear() * 10000 +
+    (today.getMonth() + 1) * 100 +
+    today.getDate();
+  const rng = (offset: number) =>
+    ((seed * 9301 + offset * 49297 + 233) % 233280) / 233280;
+
+  const messages = [
+    "Today is going to be a wonderful day for you!",
+    "Good things are coming your way today.",
+    "The universe is smiling on you today.",
+    "Today brings fresh energy and new possibilities.",
+    "Your positivity today will open unexpected doors.",
+    "Trust your instincts today — they will guide you well.",
+    "Today is perfect for taking a small brave step.",
+  ];
+
+  const colors = [
+    "Red",
+    "Gold",
+    "Blue",
+    "Green",
+    "Purple",
+    "Pink",
+    "Orange",
+    "Teal",
+  ];
+
+  const careerMsgs = [
+    "A great opportunity may come your way today.",
+    "Your hard work is about to pay off.",
+    "Focus on one task and you will shine.",
+  ];
+  const healthMsgs = [
+    "Take a moment to breathe and relax today.",
+    "A short walk could do wonders for you.",
+    "Listen to your body and rest when needed.",
+  ];
+  const financeMsgs = [
+    "A small saving today builds a big future.",
+    "Avoid impulse purchases — your wallet will thank you.",
+    "Good financial news could surprise you today.",
+  ];
+  const loveMsgs = [
+    "Show someone you care with a kind gesture.",
+    "Open your heart and love will find its way.",
+    "Today is a beautiful day to connect with someone special.",
+  ];
+
+  const pick = (arr: string[], r: number) => arr[Math.floor(r * arr.length)];
+
+  return {
+    luckyNumber: Math.floor(rng(1) * 9) + 1,
+    luckyColor: pick(colors, rng(2)),
+    overallMessage: pick(messages, rng(3)),
+    career: pick(careerMsgs, rng(4)),
+    health: pick(healthMsgs, rng(5)),
+    finance: pick(financeMsgs, rng(6)),
+    love: pick(loveMsgs, rng(7)),
+  };
 }
 
-/* ─── Star rating component ──────────────────────────────────── */
-function StarRating({ score }: { score: bigint }) {
-  const n = Number(score);
-  return (
-    <div className="flex gap-1">
-      {(["s1", "s2", "s3", "s4", "s5"] as const).map((id, i) => (
-        <Star
-          key={id}
-          className={`w-4 h-4 ${i < n ? "fill-[oklch(0.82_0.14_80)] text-[oklch(0.82_0.14_80)]" : "text-[oklch(0.35_0.07_285)]"}`}
-          strokeWidth={i < n ? 0 : 1.5}
-        />
-      ))}
-    </div>
-  );
-}
+type DailyLuck = ReturnType<typeof generateDailyLuck>;
 
 /* ─── Floating star decorations ──────────────────────────────── */
 function FloatingStars() {
@@ -96,7 +118,6 @@ function OrbDecoration() {
       className="pointer-events-none fixed inset-0 overflow-hidden z-0"
       aria-hidden
     >
-      {/* Large violet orb top-left */}
       <div
         className="absolute -top-40 -left-40 w-96 h-96 rounded-full opacity-20"
         style={{
@@ -104,7 +125,6 @@ function OrbDecoration() {
             "radial-gradient(circle, oklch(0.58 0.2 295) 0%, transparent 70%)",
         }}
       />
-      {/* Gold orb bottom-right */}
       <div
         className="absolute -bottom-32 -right-32 w-80 h-80 rounded-full opacity-15"
         style={{
@@ -112,7 +132,6 @@ function OrbDecoration() {
             "radial-gradient(circle, oklch(0.82 0.14 80) 0%, transparent 70%)",
         }}
       />
-      {/* Teal orb center-right */}
       <div
         className="absolute top-1/2 -right-20 w-64 h-64 rounded-full opacity-10"
         style={{
@@ -124,162 +143,215 @@ function OrbDecoration() {
   );
 }
 
-/* ─── Category card config ───────────────────────────────────── */
+/* ─── Category config ────────────────────────────────────────── */
+type CategoryKey = "love" | "career" | "health" | "finance";
+
 const CATEGORIES = [
   {
-    key: "love" as const,
-    label: "Love",
-    Icon: Heart,
-    color: "oklch(0.72 0.2 15)",
-    bgColor: "oklch(0.72 0.2 15 / 0.12)",
-    borderColor: "oklch(0.72 0.2 15 / 0.3)",
-    glowColor: "oklch(0.72 0.2 15 / 0.2)",
-    marker: "luck.category.card.1",
-  },
-  {
-    key: "career" as const,
+    key: "career" as CategoryKey,
     label: "Career",
     Icon: Briefcase,
     color: "oklch(0.82 0.14 80)",
     bgColor: "oklch(0.82 0.14 80 / 0.12)",
     borderColor: "oklch(0.82 0.14 80 / 0.3)",
     glowColor: "oklch(0.82 0.14 80 / 0.2)",
-    marker: "luck.category.card.2",
+    emoji: "💼",
   },
   {
-    key: "health" as const,
+    key: "health" as CategoryKey,
     label: "Health",
     Icon: Leaf,
     color: "oklch(0.72 0.16 145)",
     bgColor: "oklch(0.72 0.16 145 / 0.12)",
     borderColor: "oklch(0.72 0.16 145 / 0.3)",
     glowColor: "oklch(0.72 0.16 145 / 0.2)",
-    marker: "luck.category.card.3",
+    emoji: "🌿",
   },
   {
-    key: "finance" as const,
+    key: "finance" as CategoryKey,
     label: "Finance",
     Icon: Coins,
     color: "oklch(0.75 0.18 220)",
     bgColor: "oklch(0.75 0.18 220 / 0.12)",
     borderColor: "oklch(0.75 0.18 220 / 0.3)",
     glowColor: "oklch(0.75 0.18 220 / 0.2)",
-    marker: "luck.category.card.4",
+    emoji: "💰",
   },
-];
+  {
+    key: "love" as CategoryKey,
+    label: "Love",
+    Icon: Heart,
+    color: "oklch(0.72 0.2 15)",
+    bgColor: "oklch(0.72 0.2 15 / 0.12)",
+    borderColor: "oklch(0.72 0.2 15 / 0.3)",
+    glowColor: "oklch(0.72 0.2 15 / 0.2)",
+    emoji: "💖",
+  },
+] as const;
 
-/* ─── Loading state ──────────────────────────────────────────── */
-function LoadingState() {
+/* ─── Color name → CSS color map ─────────────────────────────── */
+const COLOR_MAP: Record<string, string> = {
+  red: "oklch(0.65 0.22 25)",
+  orange: "oklch(0.75 0.18 50)",
+  yellow: "oklch(0.88 0.18 95)",
+  gold: "oklch(0.82 0.14 80)",
+  green: "oklch(0.65 0.2 145)",
+  teal: "oklch(0.65 0.14 185)",
+  blue: "oklch(0.60 0.18 240)",
+  indigo: "oklch(0.55 0.2 270)",
+  violet: "oklch(0.60 0.22 295)",
+  purple: "oklch(0.58 0.2 295)",
+  pink: "oklch(0.72 0.18 340)",
+  white: "oklch(0.97 0.01 285)",
+  silver: "oklch(0.75 0.03 285)",
+  black: "oklch(0.2 0.03 285)",
+  emerald: "oklch(0.68 0.18 160)",
+  crimson: "oklch(0.60 0.25 20)",
+  cobalt: "oklch(0.52 0.2 250)",
+  turquoise: "oklch(0.72 0.16 185)",
+  amber: "oklch(0.82 0.16 70)",
+  lavender: "oklch(0.78 0.1 295)",
+};
+
+function getLuckyColor(colorName: string): string {
+  const key = colorName.toLowerCase().trim();
+  return (
+    COLOR_MAP[key] ??
+    `oklch(0.65 0.18 ${Math.abs(key.charCodeAt(0) * 7) % 360})`
+  );
+}
+
+/* ─── Expanded category card ─────────────────────────────────── */
+function ExpandedCategoryCard({
+  config,
+  message,
+}: {
+  config: (typeof CATEGORIES)[number];
+  message: string;
+}) {
+  const { Icon, label, color, bgColor, borderColor, glowColor, emoji } = config;
+
   return (
     <motion.div
-      data-ocid="luck.loading_state"
-      className="flex flex-col items-center justify-center min-h-[60vh] gap-8"
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
+      data-ocid="luck.category.expanded"
+      key={config.key}
+      initial={{ opacity: 0, y: 32, scale: 0.97 }}
+      animate={{ opacity: 1, y: 0, scale: 1 }}
+      exit={{ opacity: 0, y: -20, scale: 0.97 }}
+      transition={{ duration: 0.45, ease: [0.25, 0.46, 0.45, 0.94] }}
+      className="relative overflow-hidden rounded-2xl card-glass noise-overlay w-full"
+      style={{
+        borderColor: borderColor,
+        boxShadow: `0 0 60px ${glowColor}, 0 20px 60px oklch(0.1 0.04 285 / 0.8)`,
+      }}
     >
-      {/* Orbiting moon */}
-      <div className="relative w-24 h-24 flex items-center justify-center">
-        <motion.div
-          className="absolute inset-0 rounded-full border border-[oklch(0.82_0.14_80_/_0.3)]"
-          animate={{ rotate: 360 }}
-          transition={{
-            duration: 8,
-            repeat: Number.POSITIVE_INFINITY,
-            ease: "linear",
-          }}
-        />
-        <motion.div
-          className="absolute inset-2 rounded-full border border-[oklch(0.58_0.2_295_/_0.3)]"
-          animate={{ rotate: -360 }}
-          transition={{
-            duration: 6,
-            repeat: Number.POSITIVE_INFINITY,
-            ease: "linear",
-          }}
-        />
-        <motion.div
-          className="absolute top-0 left-1/2 -translate-x-1/2 w-3 h-3 rounded-full bg-[oklch(0.82_0.14_80)]"
-          animate={{ opacity: [0.5, 1, 0.5] }}
-          transition={{ duration: 1.5, repeat: Number.POSITIVE_INFINITY }}
-        />
-        <Moon
-          className="w-8 h-8 text-gold"
-          style={{ color: "oklch(0.82 0.14 80)" }}
-        />
-      </div>
-
-      <div className="text-center space-y-2">
-        <motion.p
-          className="font-display text-xl"
-          style={{ color: "oklch(0.82 0.14 80)" }}
-          animate={{ opacity: [0.6, 1, 0.6] }}
-          transition={{ duration: 2, repeat: Number.POSITIVE_INFINITY }}
-        >
-          Reading the cosmic signs…
-        </motion.p>
-        <p className="text-sm" style={{ color: "oklch(0.65 0.04 285)" }}>
-          The universe is preparing your fortune
-        </p>
-      </div>
-
-      {/* Shimmer bar */}
+      {/* Background glow gradient */}
       <div
-        className="w-48 h-1 rounded-full overflow-hidden"
-        style={{ background: "oklch(0.25 0.07 285)" }}
-      >
-        <div className="h-full w-full animate-shimmer rounded-full" />
+        className="absolute inset-0 pointer-events-none"
+        style={{
+          background: `radial-gradient(ellipse at 30% 0%, ${bgColor} 0%, transparent 60%)`,
+        }}
+      />
+
+      <div className="relative z-10 p-8 md:p-12">
+        {/* Icon + label */}
+        <div className="flex flex-col items-center gap-4 mb-8">
+          <motion.div
+            className="w-20 h-20 rounded-2xl flex items-center justify-center"
+            style={{
+              background: bgColor,
+              border: `2px solid ${borderColor}`,
+              boxShadow: `0 0 30px ${glowColor}`,
+            }}
+            animate={{ scale: [1, 1.05, 1] }}
+            transition={{
+              duration: 3,
+              repeat: Number.POSITIVE_INFINITY,
+              ease: "easeInOut",
+            }}
+          >
+            <Icon className="w-10 h-10" style={{ color }} />
+          </motion.div>
+
+          <div className="text-center">
+            <div className="flex items-center justify-center gap-2">
+              <span className="text-3xl">{emoji}</span>
+              <h2
+                className="font-display text-4xl md:text-5xl"
+                style={{
+                  color,
+                  textShadow: `0 0 30px ${glowColor}`,
+                }}
+              >
+                {label}
+              </h2>
+            </div>
+          </div>
+        </div>
+
+        {/* Message */}
+        <p
+          className="font-body text-lg md:text-xl leading-relaxed text-center max-w-2xl mx-auto"
+          style={{ color: "oklch(0.90 0.02 285)" }}
+        >
+          {message}
+        </p>
       </div>
     </motion.div>
   );
 }
 
-/* ─── Error state ────────────────────────────────────────────── */
-function ErrorState({ onRetry }: { onRetry: () => void }) {
+/* ─── Category pill button ───────────────────────────────────── */
+function CategoryPillButton({
+  config,
+  isActive,
+  onClick,
+  index,
+}: {
+  config: (typeof CATEGORIES)[number];
+  isActive: boolean;
+  onClick: () => void;
+  index: number;
+}) {
+  const { Icon, label, color, bgColor, borderColor, glowColor } = config;
+  const markerIndex = index + 1;
+
   return (
-    <motion.div
-      data-ocid="luck.error_state"
-      className="flex flex-col items-center justify-center min-h-[60vh] gap-6 text-center px-4"
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0 }}
+    <motion.button
+      type="button"
+      data-ocid={`luck.category.button.${markerIndex}`}
+      onClick={onClick}
+      whileHover={{ scale: 1.06 }}
+      whileTap={{ scale: 0.97 }}
+      className="relative flex items-center gap-2.5 px-6 py-3.5 rounded-full font-body font-semibold text-base transition-all cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-white/40"
+      style={{
+        background: isActive ? color : bgColor,
+        border: `1.5px solid ${isActive ? color : borderColor}`,
+        color: isActive ? "oklch(0.1 0.04 285)" : color,
+        boxShadow: isActive
+          ? `0 0 28px ${glowColor}, 0 4px 20px oklch(0.1 0.04 285 / 0.5)`
+          : "none",
+      }}
     >
-      <motion.div
-        className="text-5xl"
-        animate={{ rotate: [0, -5, 5, 0] }}
-        transition={{ duration: 3, repeat: Number.POSITIVE_INFINITY }}
-      >
-        🌙
-      </motion.div>
-      <div className="space-y-2">
-        <h2
-          className="font-display text-2xl"
-          style={{ color: "oklch(0.82 0.14 80)" }}
-        >
-          The stars are misaligned
-        </h2>
-        <p style={{ color: "oklch(0.65 0.04 285)" }} className="max-w-xs">
-          Mercury might be in retrograde. Let us try reading your fortune again.
-        </p>
-      </div>
-      <Button
-        data-ocid="luck.retry_button"
-        onClick={onRetry}
-        className="gap-2 font-body"
-        style={{
-          background: "oklch(0.82 0.14 80)",
-          color: "oklch(0.12 0.04 285)",
-        }}
-      >
-        <RefreshCw className="w-4 h-4" />
-        Consult the Stars Again
-      </Button>
-    </motion.div>
+      <Icon className="w-4 h-4 flex-shrink-0" />
+      <span>{label}</span>
+      {isActive && (
+        <motion.div
+          layoutId="active-pill-indicator"
+          className="absolute inset-0 rounded-full pointer-events-none"
+          style={{ background: "oklch(1 0 0 / 0.08)" }}
+        />
+      )}
+    </motion.button>
   );
 }
 
 /* ─── Main reading view ──────────────────────────────────────── */
-function LuckReadingView({ data }: { data: LuckReading }) {
+function LuckReadingView({ data }: { data: DailyLuck }) {
+  const [activeCategory, setActiveCategory] = useState<CategoryKey | null>(
+    null,
+  );
+
   const containerVariants: Variants = {
     hidden: { opacity: 0 },
     visible: {
@@ -297,25 +369,34 @@ function LuckReadingView({ data }: { data: LuckReading }) {
     },
   };
 
+  const luckyColorCss = getLuckyColor(data.luckyColor);
+  const activeCatConfig = activeCategory
+    ? CATEGORIES.find((c) => c.key === activeCategory)
+    : null;
+
+  function handleCategoryClick(key: CategoryKey) {
+    setActiveCategory((prev) => (prev === key ? null : key));
+  }
+
   return (
     <motion.div
       variants={containerVariants}
       initial="hidden"
       animate="visible"
-      className="w-full max-w-3xl mx-auto space-y-8 pb-16"
+      className="w-full max-w-3xl mx-auto space-y-6 pb-16"
     >
-      {/* ── Overall fortune hero card ── */}
+      {/* ── Hero: overall message + lucky number + lucky color ── */}
       <motion.div variants={itemVariants}>
         <div
           data-ocid="luck.overall_card"
-          className="relative overflow-hidden rounded-2xl card-glass card-glass-hover noise-overlay animate-pulse-glow"
+          className="relative overflow-hidden rounded-2xl card-glass noise-overlay animate-pulse-glow"
           style={{
             borderColor: "oklch(0.82 0.14 80 / 0.35)",
             boxShadow:
               "0 0 40px oklch(0.82 0.14 80 / 0.12), 0 20px 60px oklch(0.1 0.04 285 / 0.8)",
           }}
         >
-          {/* Subtle inner gradient */}
+          {/* Inner gradient */}
           <div
             className="absolute inset-0 pointer-events-none"
             style={{
@@ -324,8 +405,8 @@ function LuckReadingView({ data }: { data: LuckReading }) {
             }}
           />
 
-          <div className="relative z-10 p-8 md:p-10 text-center space-y-4">
-            {/* Celestial icon */}
+          <div className="relative z-10 p-8 md:p-10 text-center space-y-8">
+            {/* Rotating sparkles icon */}
             <motion.div
               className="flex justify-center"
               animate={{ rotate: [0, 360] }}
@@ -348,181 +429,276 @@ function LuckReadingView({ data }: { data: LuckReading }) {
               Your Fortune Today
             </p>
 
-            <blockquote
-              className="font-display text-2xl md:text-3xl leading-relaxed"
-              style={{ color: "oklch(0.97 0.01 285)" }}
+            {/* Lucky Message — friendly, light */}
+            <motion.div
+              className="flex flex-col items-center gap-3"
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.15, duration: 0.6 }}
             >
-              "{data.overallMessage}"
-            </blockquote>
+              <blockquote
+                className="font-display text-2xl md:text-3xl leading-relaxed max-w-xl mx-auto"
+                style={{
+                  color: "oklch(0.97 0.01 285)",
+                  textShadow: "0 0 20px oklch(0.82 0.14 80 / 0.25)",
+                }}
+              >
+                ✨ {data.overallMessage}
+              </blockquote>
+            </motion.div>
 
-            {/* Lucky badges */}
+            {/* Divider */}
             <div
-              data-ocid="luck.lucky_badges"
-              className="flex flex-wrap justify-center gap-3 pt-4"
+              className="mx-auto h-px w-40 rounded-full"
+              style={{ background: "oklch(0.4 0.09 285 / 0.35)" }}
+            />
+
+            {/* Lucky Number — large, prominent */}
+            <motion.div
+              className="flex flex-col items-center gap-1"
+              initial={{ opacity: 0, scale: 0.8 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ delay: 0.2, duration: 0.6, ease: "backOut" }}
             >
-              <LuckyBadge
-                icon={<Hash className="w-3.5 h-3.5" />}
-                label="Lucky Number"
-                value={data.luckyNumber.toString()}
-                color="oklch(0.82 0.14 80)"
-                bg="oklch(0.82 0.14 80 / 0.12)"
-                border="oklch(0.82 0.14 80 / 0.3)"
-              />
-              <LuckyBadge
-                icon={<Palette className="w-3.5 h-3.5" />}
-                label="Lucky Color"
-                value={data.luckyColor}
-                color="oklch(0.58 0.2 295)"
-                bg="oklch(0.58 0.2 295 / 0.12)"
-                border="oklch(0.58 0.2 295 / 0.3)"
-              />
-              <LuckyBadge
-                icon={<Clock className="w-3.5 h-3.5" />}
-                label="Best Time"
-                value={data.luckyTimeOfDay}
-                color="oklch(0.72 0.16 185)"
-                bg="oklch(0.72 0.16 185 / 0.12)"
-                border="oklch(0.72 0.16 185 / 0.3)"
-              />
-            </div>
+              <span
+                className="text-xs uppercase tracking-[0.22em] font-body font-semibold"
+                style={{ color: "oklch(0.65 0.1 80)" }}
+              >
+                Lucky Number
+              </span>
+              <motion.span
+                className="font-display leading-none select-none"
+                style={{
+                  fontSize: "clamp(5rem, 18vw, 9rem)",
+                  color: "oklch(0.82 0.14 80)",
+                  textShadow:
+                    "0 0 30px oklch(0.82 0.14 80 / 0.7), 0 0 80px oklch(0.82 0.14 80 / 0.3)",
+                  fontVariantNumeric: "tabular-nums",
+                }}
+                animate={{
+                  textShadow: [
+                    "0 0 30px oklch(0.82 0.14 80 / 0.5), 0 0 80px oklch(0.82 0.14 80 / 0.2)",
+                    "0 0 50px oklch(0.82 0.14 80 / 0.9), 0 0 120px oklch(0.82 0.14 80 / 0.5)",
+                    "0 0 30px oklch(0.82 0.14 80 / 0.5), 0 0 80px oklch(0.82 0.14 80 / 0.2)",
+                  ],
+                }}
+                transition={{
+                  duration: 2.5,
+                  repeat: Number.POSITIVE_INFINITY,
+                  ease: "easeInOut",
+                }}
+              >
+                {data.luckyNumber}
+              </motion.span>
+            </motion.div>
+
+            {/* Divider */}
+            <div
+              className="mx-auto h-px w-40 rounded-full"
+              style={{ background: "oklch(0.4 0.09 285 / 0.35)" }}
+            />
+
+            {/* Lucky Color — large swatch + name */}
+            <motion.div
+              className="flex flex-col items-center gap-3"
+              initial={{ opacity: 0, scale: 0.8 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ delay: 0.35, duration: 0.6, ease: "backOut" }}
+            >
+              <span
+                className="text-xs uppercase tracking-[0.22em] font-body font-semibold"
+                style={{ color: "oklch(0.58 0.2 295 / 0.9)" }}
+              >
+                Lucky Colour
+              </span>
+              <div className="flex items-center gap-4">
+                <motion.div
+                  className="rounded-full flex-shrink-0"
+                  style={{
+                    width: "clamp(3.5rem, 12vw, 5rem)",
+                    height: "clamp(3.5rem, 12vw, 5rem)",
+                    background: luckyColorCss,
+                    boxShadow: `0 0 24px ${luckyColorCss} / 0.6, 0 0 60px ${luckyColorCss} / 0.25`,
+                    border: `2px solid ${luckyColorCss}`,
+                  }}
+                  animate={{
+                    scale: [1, 1.08, 1],
+                  }}
+                  transition={{
+                    duration: 2.5,
+                    repeat: Number.POSITIVE_INFINITY,
+                    ease: "easeInOut",
+                    delay: 0.3,
+                  }}
+                />
+                <span
+                  className="font-display capitalize leading-none"
+                  style={{
+                    fontSize: "clamp(2rem, 7vw, 3.5rem)",
+                    color: luckyColorCss,
+                    textShadow: `0 0 20px ${luckyColorCss}`,
+                  }}
+                >
+                  {data.luckyColor}
+                </span>
+              </div>
+            </motion.div>
           </div>
         </div>
       </motion.div>
 
-      {/* ── Section header ── */}
-      <motion.div variants={itemVariants} className="text-center space-y-1">
-        <p
-          className="text-xs uppercase tracking-[0.2em] font-body"
-          style={{ color: "oklch(0.55 0.08 285)" }}
-        >
-          — Life Domains —
-        </p>
-        <h2
-          className="font-display text-xl"
-          style={{ color: "oklch(0.82 0.14 80 / 0.8)" }}
-        >
-          Today's Cosmic Alignment
-        </h2>
-      </motion.div>
+      {/* ── Expanded category view (shown ABOVE the buttons row) ── */}
+      <AnimatePresence mode="wait">
+        {activeCatConfig && (
+          <ExpandedCategoryCard
+            key={activeCategory}
+            config={activeCatConfig}
+            message={data[activeCatConfig.key]}
+          />
+        )}
+      </AnimatePresence>
 
-      {/* ── Category cards grid ── */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        {CATEGORIES.map((cat) => (
-          <motion.div key={cat.key} variants={itemVariants}>
-            <CategoryCard config={cat} fortune={data[cat.key]} />
+      {/* ── No category selected: hint text ── */}
+      <AnimatePresence>
+        {!activeCategory && (
+          <motion.div
+            key="explore-prompt"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            transition={{ duration: 0.35 }}
+            className="text-center py-2"
+          >
+            <p
+              className="font-body text-sm uppercase tracking-[0.18em]"
+              style={{ color: "oklch(0.5 0.06 285)" }}
+            >
+              — tap a domain to reveal your cosmic reading —
+            </p>
           </motion.div>
-        ))}
-      </div>
+        )}
+      </AnimatePresence>
+
+      {/* ── Category buttons row (always shown below the expanded card) ── */}
+      <motion.div variants={itemVariants}>
+        <div className="flex flex-wrap justify-center gap-3">
+          {CATEGORIES.map((cat, i) => (
+            <CategoryPillButton
+              key={cat.key}
+              config={cat}
+              isActive={activeCategory === cat.key}
+              onClick={() => handleCategoryClick(cat.key)}
+              index={i}
+            />
+          ))}
+        </div>
+      </motion.div>
     </motion.div>
   );
 }
 
-/* ─── Lucky badge pill ───────────────────────────────────────── */
-function LuckyBadge({
-  icon,
-  label,
-  value,
-  color,
-  bg,
-  border,
-}: {
-  icon: React.ReactNode;
-  label: string;
-  value: string;
-  color: string;
-  bg: string;
-  border: string;
-}) {
+/* ─── Home hero — single CTA button ─────────────────────────── */
+function HomeHero({ onReveal }: { onReveal: () => void }) {
   return (
-    <div
-      className="flex items-center gap-2 px-4 py-2.5 rounded-full text-sm font-body"
-      style={{
-        background: bg,
-        border: `1px solid ${border}`,
-        color: color,
-      }}
+    <motion.div
+      className="flex flex-col items-center justify-center min-h-[55vh] gap-10 px-4"
+      initial={{ opacity: 0, y: 30 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -20 }}
+      transition={{ duration: 0.7, ease: [0.25, 0.46, 0.45, 0.94] }}
     >
-      {icon}
-      <span className="opacity-70 text-xs">{label}:</span>
-      <span className="font-semibold capitalize">{value}</span>
-    </div>
-  );
-}
-
-/* ─── Category card ──────────────────────────────────────────── */
-function CategoryCard({
-  config,
-  fortune,
-}: {
-  config: (typeof CATEGORIES)[0];
-  fortune: { score: bigint; message: string };
-}) {
-  const { Icon, label, color, bgColor, borderColor, glowColor, marker } =
-    config;
-
-  return (
-    <div
-      data-ocid={marker}
-      className="relative overflow-hidden rounded-2xl card-glass card-glass-hover noise-overlay cursor-default"
-      style={{
-        borderColor: borderColor,
-        boxShadow: `0 4px 24px ${glowColor}, 0 8px 40px oklch(0.1 0.04 285 / 0.5)`,
-      }}
-    >
-      {/* Corner glow */}
-      <div
-        className="absolute -top-8 -right-8 w-24 h-24 rounded-full pointer-events-none"
-        style={{
-          background: `radial-gradient(circle, ${color.replace(")", " / 0.15)")} 0%, transparent 70%)`,
-        }}
-      />
-
-      <div className="relative z-10 p-6 space-y-4">
-        {/* Header */}
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div
-              className="w-10 h-10 rounded-xl flex items-center justify-center"
-              style={{
-                background: bgColor,
-                border: `1px solid ${borderColor}`,
-              }}
-            >
-              <Icon className="w-5 h-5" style={{ color }} />
-            </div>
-            <span
-              className="font-display text-lg"
-              style={{ color: "oklch(0.95 0.02 285)" }}
-            >
-              {label}
-            </span>
-          </div>
-          <div
-            className="text-xs font-body font-semibold px-2 py-1 rounded-full"
-            style={{ background: bgColor, color }}
-          >
-            {Number(fortune.score)}/5
-          </div>
-        </div>
-
-        {/* Star rating */}
-        <StarRating score={fortune.score} />
-
-        {/* Message */}
-        <p
-          className="font-body text-sm leading-relaxed"
-          style={{ color: "oklch(0.78 0.03 285)" }}
+      {/* Decorative glyph cluster */}
+      <div className="flex flex-col items-center gap-3">
+        <motion.div
+          className="flex items-center gap-4"
+          animate={{ opacity: [0.5, 1, 0.5] }}
+          transition={{ duration: 3, repeat: Number.POSITIVE_INFINITY }}
         >
-          {fortune.message}
+          <span className="text-3xl">✦</span>
+          <span className="text-4xl">🔮</span>
+          <span className="text-3xl">✦</span>
+        </motion.div>
+
+        <p
+          className="font-body text-sm uppercase tracking-[0.22em] text-center max-w-xs"
+          style={{ color: "oklch(0.55 0.08 285)" }}
+        >
+          What does the cosmos hold for you today?
         </p>
       </div>
-    </div>
+
+      {/* THE main CTA button */}
+      <motion.button
+        type="button"
+        data-ocid="home.primary_button"
+        onClick={onReveal}
+        className="relative flex items-center gap-3 px-10 py-5 rounded-full font-display text-xl md:text-2xl cursor-pointer outline-none focus-visible:ring-4 focus-visible:ring-yellow-400/40 select-none"
+        style={{
+          background:
+            "linear-gradient(135deg, oklch(0.88 0.18 85) 0%, oklch(0.78 0.16 75) 50%, oklch(0.70 0.14 65) 100%)",
+          color: "oklch(0.12 0.04 285)",
+          boxShadow:
+            "0 0 40px oklch(0.82 0.14 80 / 0.55), 0 0 80px oklch(0.82 0.14 80 / 0.2), 0 8px 32px oklch(0.1 0.04 285 / 0.6)",
+          border: "1px solid oklch(0.88 0.18 85 / 0.5)",
+        }}
+        animate={{
+          boxShadow: [
+            "0 0 30px oklch(0.82 0.14 80 / 0.4), 0 0 60px oklch(0.82 0.14 80 / 0.15), 0 8px 32px oklch(0.1 0.04 285 / 0.5)",
+            "0 0 55px oklch(0.82 0.14 80 / 0.7), 0 0 110px oklch(0.82 0.14 80 / 0.3), 0 8px 32px oklch(0.1 0.04 285 / 0.6)",
+            "0 0 30px oklch(0.82 0.14 80 / 0.4), 0 0 60px oklch(0.82 0.14 80 / 0.15), 0 8px 32px oklch(0.1 0.04 285 / 0.5)",
+          ],
+        }}
+        transition={{
+          duration: 2.5,
+          repeat: Number.POSITIVE_INFINITY,
+          ease: "easeInOut",
+        }}
+        whileHover={{ scale: 1.05 }}
+        whileTap={{ scale: 0.97 }}
+      >
+        {/* Shimmer overlay */}
+        <div
+          className="absolute inset-0 rounded-full pointer-events-none overflow-hidden"
+          aria-hidden
+        >
+          <motion.div
+            className="absolute inset-0"
+            style={{
+              background:
+                "linear-gradient(105deg, transparent 30%, oklch(0.98 0.01 90 / 0.35) 50%, transparent 70%)",
+              backgroundSize: "200% 100%",
+            }}
+            animate={{ backgroundPosition: ["-100% 0%", "200% 0%"] }}
+            transition={{
+              duration: 2.5,
+              repeat: Number.POSITIVE_INFINITY,
+              ease: "linear",
+              repeatDelay: 1.5,
+            }}
+          />
+        </div>
+
+        <Sparkles className="w-6 h-6 flex-shrink-0" />
+        <span>Today's Luck</span>
+      </motion.button>
+
+      {/* Subtle sub-hint */}
+      <motion.p
+        className="font-body text-xs text-center"
+        style={{ color: "oklch(0.42 0.05 285)" }}
+        animate={{ opacity: [0.4, 0.8, 0.4] }}
+        transition={{ duration: 4, repeat: Number.POSITIVE_INFINITY }}
+      >
+        Your daily cosmic reading awaits
+      </motion.p>
+    </motion.div>
   );
 }
 
 /* ─── Root App ───────────────────────────────────────────────── */
 export default function App() {
-  const { data, isLoading, isError, refetch } = useTodaysLuck();
+  const [revealed, setRevealed] = useState(false);
+  const [luckData] = useState<DailyLuck>(() => generateDailyLuck());
 
   const today = new Date();
   const dateStr = today.toLocaleDateString("en-US", {
@@ -531,6 +707,10 @@ export default function App() {
     month: "long",
     day: "numeric",
   });
+
+  function handleReveal() {
+    setRevealed(true);
+  }
 
   return (
     <div
@@ -629,16 +809,18 @@ export default function App() {
         {/* ── Main ── */}
         <main className="flex-1 px-4 py-4">
           <AnimatePresence mode="wait">
-            {isLoading && <LoadingState key="loading" />}
-            {isError && <ErrorState key="error" onRetry={() => refetch()} />}
-            {data && !isLoading && (
+            {/* Home state: show big CTA */}
+            {!revealed && <HomeHero key="home" onReveal={handleReveal} />}
+
+            {/* Data ready */}
+            {revealed && (
               <motion.div
                 key="content"
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
               >
-                <LuckReadingView data={data} />
+                <LuckReadingView data={luckData} />
               </motion.div>
             )}
           </AnimatePresence>
