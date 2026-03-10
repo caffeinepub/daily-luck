@@ -2,15 +2,33 @@ import { Briefcase, Coins, Heart, Leaf, Sparkles } from "lucide-react";
 import { AnimatePresence, type Variants, motion } from "motion/react";
 import { useState } from "react";
 
+/* ─── Deterministic hash RNG ─────────────────────────────────── */
+function hashSeed(str: string): number {
+  let h = 2166136261;
+  for (let i = 0; i < str.length; i++) {
+    h ^= str.charCodeAt(i);
+    h = Math.imul(h, 16777619);
+  }
+  return h >>> 0;
+}
+
+function seededRandom(seed: number, offset: number): number {
+  let s = seed ^ (offset * 2654435761);
+  s = Math.imul(s ^ (s >>> 16), 0x45d9f3b);
+  s = Math.imul(s ^ (s >>> 16), 0x45d9f3b);
+  s = s ^ (s >>> 16);
+  return (s >>> 0) / 0xffffffff;
+}
+
 /* ─── Local luck generator (no backend needed) ───────────────── */
 function generateDailyLuck() {
   const today = new Date();
-  const seed =
-    today.getFullYear() * 10000 +
-    (today.getMonth() + 1) * 100 +
-    today.getDate();
-  const rng = (offset: number) =>
-    ((seed * 9301 + offset * 49297 + 233) % 233280) / 233280;
+  const year = today.getFullYear();
+  const month = today.getMonth() + 1;
+  const day = today.getDate();
+  const dateKey = `${year}-${month}-${day}`;
+  const seed = hashSeed(dateKey);
+  const rng = (offset: number) => seededRandom(seed, offset);
 
   const messages = [
     "Today is going to be a wonderful day for you!",
@@ -20,6 +38,21 @@ function generateDailyLuck() {
     "Your positivity today will open unexpected doors.",
     "Trust your instincts today — they will guide you well.",
     "Today is perfect for taking a small brave step.",
+    "Something delightful is waiting around the corner.",
+    "Your energy today is magnetic — let it shine!",
+    "Today calls for a little kindness to yourself.",
+    "Expect a pleasant surprise before the day ends.",
+    "You have everything you need to make today great.",
+    "The stars are rooting for you — go for it!",
+    "Today is a fresh canvas — paint it beautifully.",
+    "A moment of joy is headed your way today.",
+    "Your intuition is sharp today — listen to it.",
+    "Small steps today lead to big leaps tomorrow.",
+    "Today holds the kind of magic you've been waiting for.",
+    "Let today surprise you — stay open to the unexpected.",
+    "You radiate good vibes today and the world notices.",
+    "Breathe easy — today flows in your favour.",
+    "Fortune favours the bold, and today you are bold.",
   ];
 
   const colors = [
@@ -31,33 +64,70 @@ function generateDailyLuck() {
     "Pink",
     "Orange",
     "Teal",
+    "Crimson",
+    "Emerald",
+    "Cobalt",
+    "Amber",
+    "Lavender",
+    "Turquoise",
+    "Indigo",
+    "Violet",
+    "Silver",
+    "Yellow",
   ];
 
   const careerMsgs = [
     "A great opportunity may come your way today.",
     "Your hard work is about to pay off.",
     "Focus on one task and you will shine.",
+    "A colleague may offer unexpected support today.",
+    "Creative thinking will be your superpower today.",
+    "Step up and share your ideas — they will be well received.",
+    "Persistence pays off; keep going a little longer.",
+    "Today is ideal for networking and building connections.",
+    "A decision you make today could shape your future positively.",
   ];
+
   const healthMsgs = [
     "Take a moment to breathe and relax today.",
     "A short walk could do wonders for you.",
     "Listen to your body and rest when needed.",
+    "Hydrate well — your body will thank you today.",
+    "A little stretch this morning sets a great tone.",
+    "Nourish yourself with something wholesome today.",
+    "Mindful moments today reduce stress significantly.",
+    "Your energy levels are strong — channel them wisely.",
+    "Sleep well tonight; tomorrow starts with tonight's rest.",
   ];
+
   const financeMsgs = [
     "A small saving today builds a big future.",
     "Avoid impulse purchases — your wallet will thank you.",
     "Good financial news could surprise you today.",
+    "Review your goals; alignment brings abundance closer.",
+    "An unexpected income opportunity may present itself.",
+    "Generosity today creates a cycle of prosperity.",
+    "Today is a good day to plan, not just spend.",
+    "A careful choice now saves you money later.",
+    "Financial clarity is within reach — trust the process.",
   ];
+
   const loveMsgs = [
     "Show someone you care with a kind gesture.",
     "Open your heart and love will find its way.",
     "Today is a beautiful day to connect with someone special.",
+    "A small act of appreciation can strengthen any bond.",
+    "Say what you feel today — honesty is magnetic.",
+    "Romance is in the air; don't ignore the signals.",
+    "Your warmth today draws people closer to you.",
+    "Quality time with loved ones recharges your spirit.",
+    "Love yourself first today and it ripples outward.",
   ];
 
   const pick = (arr: string[], r: number) => arr[Math.floor(r * arr.length)];
 
   return {
-    luckyNumber: Math.floor(rng(1) * 9) + 1,
+    luckyNumber: Math.floor(rng(1) * 99) + 1,
     luckyColor: pick(colors, rng(2)),
     overallMessage: pick(messages, rng(3)),
     career: pick(careerMsgs, rng(4)),
